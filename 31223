@@ -1,0 +1,178 @@
+#pov:
+from ast import While
+from concurrent.futures.process import _sendback_result
+import random
+import secrets
+from socketserver import DatagramRequestHandler
+from sqlite3 import SQLITE_CREATE_VIEW
+HANGMAN_PICS = ['''
+*----*
+     |
+     |
+     |
+     |
+     |
+     ==
+     ==''','''
+
+*----*
+  0  |
+     |
+     |
+     |
+     |
+     ==
+     ==''','''   
+    
+
+*----*
+  0  |
+  |  |
+     |
+     |
+     |
+     ==
+     ==''','''   
+
+*----*
+  0  |
+ /|  |
+     |
+     |
+     |
+     ==
+     ==''','''   
+     
+ *----*   
+  0   |
+ /|\  |
+      |
+      |
+      |
+      ==
+      ==''','''    
+ 
+ *----*
+  0   |
+ /|\  |
+  |   |
+      |
+      |
+      ==
+      ==''','''    
+
+ *----* 
+  0   |
+ /|\  |
+  |   |
+ /    |
+      |
+      ==
+      ==''','''       
+
+ *----*
+  0   |
+ /|\  |
+  |   |
+ / \  |
+      |
+      ==
+      ==''']
+
+      
+
+world = 'жаба жабка жаворонок жако железняк желна желтоглазка желтопузик желтохвост желтощёк желтушка жерлянка жираф жужелица жук'.split()
+
+def getRandomWorld(worldList):
+     worldIndex = random.randint(0, len(worldList) - 1)
+     return worldList[worldIndex]
+
+def displayBoard(missedletters, correctLetters,  secretS):
+     print(HANGMAN_PICS[len(missedletters)])
+     print()
+
+     print('ОШИБЫЧНЫЕ БУКВЫ:',end=' ')
+     for letter in missedletters:
+          print(letter,end='')
+     print()
+
+     blanks = '_' * len(secretS)
+
+     for i in range(len(secretS)):
+          if secretS[i] in correctLetters:
+               blanks = blanks[:i] + secretS[i] + blanks[i+1:]
+
+     for letter in blanks:
+          print(letter,end=' ')
+     print()
+
+
+
+def getGuess(alreadyGuessed):
+     while True:
+          print('Введите букву')
+          guess = input()
+          guess = guess.lower()
+          if len(guess) != 1:
+               print('Ваша буква:')
+          elif guess in alreadyGuessed:
+               print ('Вы уже пробовали эту букву. Выберите другую')
+          elif guess not in 'ёйцукенгшщзхъфывапролджэячсмитьбю':
+               print('Пожалуйста, введите букву кириллицы')
+          else: 
+               return guess
+
+def PlayAgian():
+     print('продлжить')
+     while True:
+          otvet = input().lower()
+          if (otvet == 'да') or (otvet == 'д') or (otvet == 'yes') or (otvet == 'y'):
+               return True
+          elif (otvet == 'нет') or (otvet == 'н') or (otvet == 'n') or (otvet == 'n'):
+               return False
+          else:
+               print('''Я вас не понял!''')
+     
+
+     
+print('В И С Е Л И Ц А')
+
+errorB=''
+yesB=''
+gameOver=False
+secretS = getRandomWorld(world)
+
+while True:
+     displayBoard(errorB, yesB, secretS)
+     
+     guess = getGuess(errorB+yesB)
+
+     if guess in secretS:
+          yesB = yesB + guess
+
+          foundAllLetters = True
+          for i in range(len(secretS)):
+               if secretS[i] not in yesB:
+                    foundAllLetters = False
+                    break
+
+          if foundAllLetters:
+               print('Превосходно! Было загадано слово "'+secretS+'"! Вы победили!')
+               gameIsDone = True
+     else:
+          errorB = errorB+guess
+
+          if len(errorB) == len(HANGMAN_PICS) - 1:
+               displayBoard(errorB, yesB, secretS)
+               print ('У вас не осталось попыток!\nПосле '+str(len(errorB))+' ошибок и '+str(len(yesB))+'угаданных букв. Загаданное слово:'+secretS+'"')
+               gameIsDone = True
+
+     if gameOver:
+          if PlayAgian():
+               errorB = ''
+               yesB = ''
+               gameOver = False
+               secretS = getRandomWorld(world)
+          else:
+               break    
+
